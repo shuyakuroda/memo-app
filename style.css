@@ -72,4 +72,10 @@ button.delete-btn {
 li span {
   flex: 1;
   word-break: break-word;
+  cursor: pointer;
+}
+
+.important {
+  color: red;
+  font-weight: bold;
 }

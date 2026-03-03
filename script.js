@@ -1,88 +1,68 @@
 'use strict';
 
-// const form = document.getElementById("memoForm");
-// const input = document.getElementById("memoInput");
-// const list = document.getElementById("memoList");
-
-// let memos = [];
-
-// function render() {
-//   list.innerHTML = "";
-
-//   memos.forEach(memo => {
-//     const li = document.createElement("li");
-//     li.textContent = memo.text;
-
-//     li.dataset.id = memo.id;
-
-//     const deleteBtn = document.createElement("button");
-//     deleteBtn.textContent = "❌";
-
-//     li.appendChild(deleteBtn);
-//     list.appendChild(li);
-//   });
-// }
-
-// form.addEventListener("submit", function (e) {
-//   e.preventDefault();
-
-//   if (input.value === "") return;
-
-//   memos.push({
-//     id: Date.now(),
-//     text: input.value
-//   });
-
-//   input.value = "";
-
-//   render();
-// })
-
-// const input = document.getElementById("memoInput");
-// const form = document.getElementById("memoForm");
-// const list = document.getElementById("memoList");
-
-// form.addEventListener("submit", function (e) {
-//   e.preventDefault();
-//   if (input.value === "") return;
-
-//   const text = input.value;
-
-//   const li = document.createElement("li");
-//   li.textContent = text;
-
-
-//   const deleteBtn = document.createElement("button");
-//   deleteBtn.textContent = "×";
-
-//   deleteBtn.addEventListener("click",function(e) {
-//     const li = e.target.closest("li");
-//     li.remove();
-//   });
-
-//   li.appendChild(deleteBtn);
-
-//   list.appendChild(li);
-
-//   input.value = "";
-
-// });
+let memos = [];
 
 const form = document.getElementById("memoForm");
 const input = document.getElementById("memoInput");
 const list = document.getElementById("memoList");
 
-form.addEventListener("submit", function(e) {
+
+// メモ追加処理
+form.addEventListener("submit", function (e) {
   e.preventDefault();
 
-  const text = input.value;
+  const text = input.value.trim();
+  if (!text) return;
 
-  if(text === "") return;
+  const newMemo = {
+    id: Date.now(),
+    text: text,
+    important: false
+  };
 
+  memos.push(newMemo);
+  saveMemos();
+  updateCount();
+  // createMemoElement(newMemo);
+  render();
+
+  input.value = "";
+});
+
+
+// 削除処理（イベント委任）
+list.addEventListener("click", function (e) {
+
+  const deleteBtn = e.target.closest(".delete-btn");
+  if (!deleteBtn) return;
+
+  const li = deleteBtn.closest("li");
+  const id = Number(li.dataset.id);
+
+  memos = memos.filter(memo => memo.id !== id);
+  saveMemos();
+  updateCount();
+  // li.remove();
+  render();
+});
+
+// 保存処理
+function saveMemos() {
+  localStorage.setItem("memos", JSON.stringify(memos));
+}
+
+// DOM生成関数
+function createMemoElement(memo) {
   const li = document.createElement("li");
 
+  li.dataset.id = memo.id;
+
   const textSpan = document.createElement("span");
-  textSpan.textContent = text;
+  textSpan.textContent = memo.text;
+
+  if(memo.important) {
+    textSpan.classList.add("important");
+  }
 
   li.appendChild(textSpan);
 
@@ -93,13 +73,31 @@ form.addEventListener("submit", function(e) {
 
   list.appendChild(li);
 
-  input.value = "";
-});
+  textSpan.addEventListener("click", () => {
+    memo.important = !memo.important;
+    textSpan.classList.toggle("important");
+    saveMemos();
+  });
+}
 
-list.addEventListener("click",function(e) {
+// 保存データ復元
+const savedMemos = localStorage.getItem("memos");
 
-  const deleteBtn = e.target.closest(".delete-btn");
-  if(!deleteBtn) return;
+if (savedMemos) {
+  memos = JSON.parse(savedMemos);
+  // memos.forEach(createMemoElement);
+  render();
+  updateCount();
+}
 
-  deleteBtn.closest("li").remove();
-})
+function updateCount() {
+  const count = document.getElementById("memoCount");
+  count.textContent = `メモ ${memos.length}件`;
+}
+
+
+
+function render() {
+  list.innerHTML = "";
+  memos.forEach(createMemoElement);
+}
