@@ -6,6 +6,8 @@ const form = document.getElementById("memoForm");
 const input = document.getElementById("memoInput");
 const list = document.getElementById("memoList");
 
+let editingId = null;
+
 
 // メモ追加処理
 form.addEventListener("submit", function (e) {
@@ -14,16 +16,24 @@ form.addEventListener("submit", function (e) {
   const text = input.value.trim();
   if (!text) return;
 
-  const newMemo = {
-    id: Date.now(),
-    text: text,
-    important: false
-  };
+  if (editingId) {
+    memos = memos.map(memo => memo.id === editingId
+      ? { ...memo, text: text }
+      : memo
+    );
+    editingId = null;
+  } else {
+    const newMemo = {
+      id: Date.now(),
+      text: text,
+      important: false,
+      completed: false
+    };
+    memos.push(newMemo);
+  }
 
-  memos.push(newMemo);
   saveMemos();
   updateCount();
-  // createMemoElement(newMemo);
   render();
 
   input.value = "";
@@ -42,7 +52,6 @@ list.addEventListener("click", function (e) {
   memos = memos.filter(memo => memo.id !== id);
   saveMemos();
   updateCount();
-  // li.remove();
   render();
 });
 
@@ -60,11 +69,35 @@ function createMemoElement(memo) {
   const textSpan = document.createElement("span");
   textSpan.textContent = memo.text;
 
-  if(memo.important) {
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = memo.completed;
+
+  checkbox.addEventListener("change", function () {
+    memos = memos.map(m =>
+      m.id === memo.id
+        ? { ...m, completed: !m.completed }
+        : m
+    );
+    saveMemos();
+    render();
+  });
+
+  if (memo.completed) {
+    textSpan.classList.add("completed");
+  }
+
+  if (memo.important) {
     textSpan.classList.add("important");
   }
 
-  li.appendChild(textSpan);
+  const left = document.createElement("div");
+  left.classList.add("memo-left");
+
+  left.appendChild(checkbox);
+  left.appendChild(textSpan);
+
+  li.appendChild(left);
 
   const deleteBtn = document.createElement("button");
   deleteBtn.textContent = "×";
@@ -73,10 +106,18 @@ function createMemoElement(memo) {
 
   list.appendChild(li);
 
+  // 重要に変換
   textSpan.addEventListener("click", () => {
     memo.important = !memo.important;
-    textSpan.classList.toggle("important");
     saveMemos();
+    render();
+  });
+
+  // 編集
+  textSpan.addEventListener("dblclick", () => {
+    input.value = memo.text;
+    editingId = memo.id;
+    input.focus();
   });
 }
 
@@ -85,7 +126,6 @@ const savedMemos = localStorage.getItem("memos");
 
 if (savedMemos) {
   memos = JSON.parse(savedMemos);
-  // memos.forEach(createMemoElement);
   render();
   updateCount();
 }
