@@ -8,6 +8,22 @@ const list = document.getElementById("memoList");
 
 let editingId = null;
 
+let filter = "all";
+
+document.getElementById("showActive").addEventListener("click", () => {
+  filter = "active";
+  render();
+});
+
+document.getElementById("showAll").addEventListener("click", () => {
+  filter = "all";
+  render();
+});
+
+document.getElementById("showCompleted").addEventListener("click", () => {
+  filter = "completed";
+  render();
+});
 
 // メモ追加処理
 form.addEventListener("submit", function (e) {
@@ -139,5 +155,16 @@ function updateCount() {
 
 function render() {
   list.innerHTML = "";
-  memos.forEach(createMemoElement);
+
+  memos.sort((a, b) => a.completed - b.completed || b.id - a.id);
+
+  let filteredMemos = memos;
+
+  if (filter === "active") {
+    filteredMemos = memos.filter(m => !m.completed);
+  } else if (filter === "completed") {
+    filteredMemos = memos.filter(m => m.completed);
+  }
+
+  filteredMemos.forEach(createMemoElement);
 }
